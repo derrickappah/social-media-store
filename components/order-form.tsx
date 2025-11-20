@@ -235,16 +235,29 @@ export function OrderForm() {
         }),
       })
 
-      if (!paystackResponse.ok) {
-        throw new Error("Failed to initialize Paystack payment")
-      }
-
       const paystackData = await paystackResponse.json()
 
+      if (!paystackResponse.ok) {
+        // Extract detailed error message from response
+        const errorMessage = paystackData.details || paystackData.error || "Failed to initialize Paystack payment"
+        console.error("[v0] Paystack initialization failed:", {
+          status: paystackResponse.status,
+          error: paystackData,
+        })
+        throw new Error(errorMessage)
+      }
+
+      if (paystackData.error) {
+        const errorMessage = paystackData.details || paystackData.error || "Failed to initialize payment"
+        throw new Error(errorMessage)
+      }
+
       if (paystackData.authorization_url) {
+        // Use window.location for better mobile compatibility
         window.location.href = paystackData.authorization_url
       } else {
-        throw new Error("Failed to get Paystack authorization URL")
+        console.error("[v0] No authorization URL in response:", paystackData)
+        throw new Error(paystackData.details || "Failed to get payment authorization URL. Please try again.")
       }
     } catch (error) {
       console.error("[v0] Order submission error:", error)
