@@ -1,11 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams()
   // Paystack can redirect with either 'reference' or 'trxref' parameter
   const reference = searchParams.get("reference") || searchParams.get("trxref")
@@ -146,5 +146,29 @@ export default function PaymentSuccessPage() {
         </div>
       </div>
     </section>
+  )
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <section className="py-20 md:py-32 bg-muted/30">
+          <div className="container px-4">
+            <div className="mx-auto max-w-2xl">
+              <div className="bg-card p-8 md:p-12 rounded-lg border shadow-sm text-center">
+                <Loader2 className="h-16 w-16 text-blue-500 mx-auto mb-4 animate-spin" />
+                <h2 className="text-2xl font-bold mb-3">Loading...</h2>
+                <p className="text-muted-foreground">
+                  Please wait while we load your payment information.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+      }
+    >
+      <PaymentSuccessContent />
+    </Suspense>
   )
 }
