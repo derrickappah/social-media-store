@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, Package, CheckCircle2, Clock, XCircle, AlertCircle } from "lucide-react"
+import { Loader2, Package, CheckCircle2, Clock, XCircle, AlertCircle, RefreshCw } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -62,35 +62,35 @@ export default function OrdersPage() {
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
   const router = useRouter()
   
   // Create a stable supabase client reference
   const supabase = useMemo(() => createClient(), [])
 
-  useEffect(() => {
-    const fetchUserAndOrders = async () => {
-      try {
-        setLoading(true)
-        setError(null)
+  const fetchOrders = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
 
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession()
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession()
 
-        if (sessionError) {
-          console.error("Error getting session:", sessionError)
-          setError("Failed to authenticate. Please try logging in again.")
-          setLoading(false)
-          return
-        }
+      if (sessionError) {
+        console.error("Error getting session:", sessionError)
+        setError("Failed to authenticate. Please try logging in again.")
+        setLoading(false)
+        return
+      }
 
-        if (!session?.user) {
-          router.push("/")
-          return
-        }
+      if (!session?.user) {
+        router.push("/")
+        return
+      }
 
-        setUser(session.user)
+      setUser(session.user)
 
         // Try to fetch orders by user_id first (if column exists)
         let ordersData: Order[] = []
@@ -174,17 +174,39 @@ export default function OrdersPage() {
         } else {
           setOrders(ordersData)
         }
-      } catch (err) {
-        console.error("Unexpected error in fetchUserAndOrders:", err)
-        setError("An unexpected error occurred. Please try again.")
-        setOrders([])
-      } finally {
-        setLoading(false)
-      }
+    } catch (err) {
+      console.error("Unexpected error in fetchOrders:", err)
+      setError("An unexpected error occurred. Please try again.")
+      setOrders([])
+    } finally {
+      setLoading(false)
     }
+  }, [supabase, router])
 
-    fetchUserAndOrders()
-  }, [router, supabase])
+  useEffect(() => {
+    fetchOrders()
+
+    // Auto-refresh orders every 30 seconds if there are pending/processing orders
+    const interval = setInterval(() => {
+      setOrders((currentOrders) => {
+        const hasActiveOrders = currentOrders.some(
+          (order) => order.status === "pending" || order.status === "payment_confirmed" || order.status === "processing"
+        )
+        
+        if (hasActiveOrders) {
+          // Trigger sync API to update statuses
+          fetch("/api/orders/sync-status", { method: "POST" }).catch(console.error)
+          
+          // Refresh orders
+          fetchOrders()
+        }
+        
+        return currentOrders
+      })
+    }, 30000) // 30 seconds
+
+    return () => clearInterval(interval)
+  }, [fetchOrders])
 
   if (loading) {
     return (
@@ -209,11 +231,32 @@ export default function OrdersPage() {
       <Header />
       <main className="container px-4 py-12 md:py-20">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold tracking-tight mb-2">My Orders</h1>
-            <p className="text-muted-foreground">
-              Track the status of all your orders in one place
-            </p>
+          <div className="mb-8 flex items-start justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight mb-2">My Orders</h1>
+              <p className="text-muted-foreground">
+                Track the status of all your orders in one place
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                setSyncing(true)
+                try {
+                  await fetch("/api/orders/sync-status", { method: "POST" })
+                  await fetchOrders()
+                } catch (err) {
+                  console.error("Sync failed:", err)
+                } finally {
+                  setSyncing(false)
+                }
+              }}
+              disabled={syncing || loading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+              {syncing ? "Syncing..." : "Sync Status"}
+            </Button>
           </div>
 
           {error ? (
