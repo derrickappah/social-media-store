@@ -10,6 +10,8 @@ interface PricingConfig {
   panelCost: number
   // Currency of panel cost
   panelCurrency?: string
+  // SMMGen service ID for this specific package
+  smmgenServiceId: number
 }
 
 interface ServicePricing {
@@ -33,16 +35,19 @@ export const PRICING_CONFIG: ServicePricing = {
         customerPrice: 10, // GHS 10 (what you charge)
         panelCost: 0.1,    // USD 0.1 (what panel charges)
         panelCurrency: "USD",
+        smmgenServiceId: 1, // ← Update with your actual SMMGen service ID for this package
       },
       likes_5k: {
         customerPrice: 45,
         panelCost: 0.4,
         panelCurrency: "USD",
+        smmgenServiceId: 2, // ← Different service ID for 5k package
       },
       likes_10k: {
         customerPrice: 80,
         panelCost: 0.7,
         panelCurrency: "USD",
+        smmgenServiceId: 3, // ← Different service ID for 10k package
       },
     },
     Followers: {
@@ -50,16 +55,19 @@ export const PRICING_CONFIG: ServicePricing = {
         customerPrice: 15,
         panelCost: 0.15,
         panelCurrency: "USD",
+        smmgenServiceId: 4, // ← Update with your actual SMMGen service ID
       },
       followers_1k: {
         customerPrice: 25,
         panelCost: 0.25,
         panelCurrency: "USD",
+        smmgenServiceId: 5, // ← Different service ID
       },
       followers_5k: {
         customerPrice: 100,
         panelCost: 1.0,
         panelCurrency: "USD",
+        smmgenServiceId: 6, // ← Different service ID
       },
     },
     Comments: {
@@ -67,11 +75,13 @@ export const PRICING_CONFIG: ServicePricing = {
         customerPrice: 10,
         panelCost: 0.1,
         panelCurrency: "USD",
+        smmgenServiceId: 7, // ← Update with your actual SMMGen service ID
       },
       comments_100: {
         customerPrice: 18,
         panelCost: 0.15,
         panelCurrency: "USD",
+        smmgenServiceId: 8, // ← Different service ID
       },
     },
     Saves: {
@@ -79,16 +89,19 @@ export const PRICING_CONFIG: ServicePricing = {
         customerPrice: 12,
         panelCost: 0.12,
         panelCurrency: "USD",
+        smmgenServiceId: 9, // ← Update with your actual SMMGen service ID
       },
       saves_1k: {
         customerPrice: 20,
         panelCost: 0.18,
         panelCurrency: "USD",
+        smmgenServiceId: 10, // ← Different service ID
       },
       saves_5k: {
         customerPrice: 90,
         panelCost: 0.8,
         panelCurrency: "USD",
+        smmgenServiceId: 11, // ← Different service ID
       },
     },
     Views: {
@@ -96,16 +109,19 @@ export const PRICING_CONFIG: ServicePricing = {
         customerPrice: 8,
         panelCost: 0.08,
         panelCurrency: "USD",
+        smmgenServiceId: 12, // ← Update with your actual SMMGen service ID
       },
       views_5k: {
         customerPrice: 35,
         panelCost: 0.3,
         panelCurrency: "USD",
+        smmgenServiceId: 13, // ← Different service ID
       },
       views_10k: {
         customerPrice: 65,
         panelCost: 0.55,
         panelCurrency: "USD",
+        smmgenServiceId: 14, // ← Different service ID
       },
     },
   },
@@ -115,16 +131,19 @@ export const PRICING_CONFIG: ServicePricing = {
         customerPrice: 10,
         panelCost: 0.1,
         panelCurrency: "USD",
+        smmgenServiceId: 9396, // ← Update with your actual SMMGen service ID
       },
       likes_5k: {
         customerPrice: 45,
         panelCost: 0.4,
         panelCurrency: "USD",
+        smmgenServiceId: 9397, // ← Different service ID for 5k package
       },
       likes_10k: {
         customerPrice: 80,
         panelCost: 0.7,
         panelCurrency: "USD",
+        smmgenServiceId: 9398, // ← Different service ID for 10k package
       },
     },
     Followers: {
@@ -132,16 +151,19 @@ export const PRICING_CONFIG: ServicePricing = {
         customerPrice: 15,
         panelCost: 0.15,
         panelCurrency: "USD",
+        smmgenServiceId: 15, // ← Update with your actual SMMGen service ID
       },
       followers_1k: {
         customerPrice: 25,
         panelCost: 0.25,
         panelCurrency: "USD",
+        smmgenServiceId: 16, // ← Different service ID
       },
       followers_5k: {
         customerPrice: 100,
         panelCost: 1.0,
         panelCurrency: "USD",
+        smmgenServiceId: 17, // ← Different service ID
       },
     },
     Views: {
@@ -149,16 +171,19 @@ export const PRICING_CONFIG: ServicePricing = {
         customerPrice: 8,
         panelCost: 0.08,
         panelCurrency: "USD",
+        smmgenServiceId: 18, // ← Update with your actual SMMGen service ID
       },
       views_5k: {
         customerPrice: 35,
         panelCost: 0.3,
         panelCurrency: "USD",
+        smmgenServiceId: 19, // ← Different service ID
       },
       views_10k: {
         customerPrice: 65,
         panelCost: 0.55,
         panelCurrency: "USD",
+        smmgenServiceId: 20, // ← Different service ID
       },
     },
   },
@@ -168,6 +193,7 @@ export const PRICING_CONFIG: ServicePricing = {
         customerPrice: 10,
         panelCost: 0.1,
         panelCurrency: "USD",
+        smmgenServiceId: 21, // ← Update with your actual SMMGen service ID
       },
     },
     Followers: {
@@ -175,6 +201,7 @@ export const PRICING_CONFIG: ServicePricing = {
         customerPrice: 15,
         panelCost: 0.15,
         panelCurrency: "USD",
+        smmgenServiceId: 22, // ← Update with your actual SMMGen service ID
       },
     },
   },
@@ -184,16 +211,19 @@ export const PRICING_CONFIG: ServicePricing = {
         customerPrice: 8,
         panelCost: 0.08,
         panelCurrency: "USD",
+        smmgenServiceId: 23, // ← Update with your actual SMMGen service ID
       },
       views_5k: {
         customerPrice: 35,
         panelCost: 0.3,
         panelCurrency: "USD",
+        smmgenServiceId: 24, // ← Different service ID
       },
       views_10k: {
         customerPrice: 65,
         panelCost: 0.55,
         panelCurrency: "USD",
+        smmgenServiceId: 25, // ← Different service ID
       },
     },
   },
@@ -203,11 +233,13 @@ export const PRICING_CONFIG: ServicePricing = {
         customerPrice: 15,
         panelCost: 0.15,
         panelCurrency: "USD",
+        smmgenServiceId: 26, // ← Update with your actual SMMGen service ID
       },
       followers_1k: {
         customerPrice: 25,
         panelCost: 0.25,
         panelCurrency: "USD",
+        smmgenServiceId: 27, // ← Different service ID
       },
     },
   },
@@ -222,6 +254,19 @@ export function getPricingConfig(
   packageId: string
 ): PricingConfig | null {
   return PRICING_CONFIG[platform]?.[serviceType]?.[packageId] || null
+}
+
+/**
+ * Get SMMGen service ID for a specific package
+ * This allows different packages to use different SMMGen service IDs
+ */
+export function getSMMGenServiceIdFromPackage(
+  platform: string,
+  serviceType: string,
+  packageId: string
+): number | null {
+  const config = getPricingConfig(platform, serviceType, packageId)
+  return config?.smmgenServiceId || null
 }
 
 /**

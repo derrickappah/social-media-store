@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { getSMMGenOrderStatus, getSMMGenServiceId, processSMMGenOrder } from "@/lib/smmgen"
+import { getSMMGenOrderStatus, processSMMGenOrder } from "@/lib/smmgen"
+import { getSMMGenServiceIdFromPackage, getSMMGenServiceId } from "@/lib/pricing"
 
 /**
  * Sync order statuses with SMMGen API
@@ -107,8 +108,24 @@ export async function POST(request: NextRequest) {
           try {
             console.log(`[Sync] Processing order ${order.id} through SMMGen`)
             
-            // Map service to SMMGen ID
-            const serviceId = getSMMGenServiceId(order.platform, order.service_type)
+            // Get SMMGen service ID from package (preferred) or fallback to platform/service type mapping
+            let serviceId: number | null = null
+            
+            // Try to get service ID from package_id first (allows different packages to use different SMMGen IDs)
+            if (order.package_id) {
+              serviceId = getSMMGenServiceIdFromPackage(
+                order.platform,
+                order.service_type,
+                order.package_id
+              )
+              console.log(`[Sync] Using package-specific SMMGen service ID: ${serviceId} for package: ${order.package_id}`)
+            }
+            
+            // Fallback to platform/service type mapping if package_id not found or service ID not found
+            if (serviceId === null || serviceId === 0) {
+              serviceId = getSMMGenServiceId(order.platform, order.service_type)
+              console.log(`[Sync] Using fallback SMMGen service ID: ${serviceId} for platform/service: ${order.platform} ${order.service_type}`)
+            }
             
             if (serviceId === null || serviceId === 0) {
               console.warn(`[Sync] No service ID for order ${order.id}: ${order.platform} ${order.service_type}`)

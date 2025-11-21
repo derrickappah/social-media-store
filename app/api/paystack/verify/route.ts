@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { getSMMGenServiceId, processSMMGenOrder } from "@/lib/smmgen"
-import { getPricingConfig } from "@/lib/pricing"
+import { processSMMGenOrder } from "@/lib/smmgen"
+import { getSMMGenServiceIdFromPackage, getSMMGenServiceId } from "@/lib/pricing"
 
 export async function POST(request: NextRequest) {
   try {
@@ -118,8 +118,24 @@ export async function POST(request: NextRequest) {
           
           console.log("[v0] Processing order through SMMGen:", orderId)
           
-          // Map order to SMMGen format (returns numeric service ID)
-          const serviceId = getSMMGenServiceId(orderDetails.platform, orderDetails.service_type)
+          // Get SMMGen service ID from package (preferred) or fallback to platform/service type mapping
+          let serviceId: number | null = null
+          
+          // Try to get service ID from package_id first (allows different packages to use different SMMGen IDs)
+          if (orderDetails.package_id) {
+            serviceId = getSMMGenServiceIdFromPackage(
+              orderDetails.platform,
+              orderDetails.service_type,
+              orderDetails.package_id
+            )
+            console.log("[v0] Using package-specific SMMGen service ID:", serviceId, "for package:", orderDetails.package_id)
+          }
+          
+          // Fallback to platform/service type mapping if package_id not found or service ID not found
+          if (serviceId === null || serviceId === 0) {
+            serviceId = getSMMGenServiceId(orderDetails.platform, orderDetails.service_type)
+            console.log("[v0] Using fallback SMMGen service ID:", serviceId, "for platform/service:", orderDetails.platform, orderDetails.service_type)
+          }
           
           if (serviceId !== null && serviceId > 0) {
             // Get quantity from database (preferred) or extract from package name (fallback)

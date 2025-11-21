@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { getSMMGenOrderStatus, getSMMGenServiceId, processSMMGenOrder } from "@/lib/smmgen"
+import { getSMMGenOrderStatus, processSMMGenOrder } from "@/lib/smmgen"
+import { getSMMGenServiceIdFromPackage, getSMMGenServiceId } from "@/lib/pricing"
 
 /**
  * Cron job endpoint to automatically sync order statuses
@@ -100,7 +101,22 @@ export async function GET(request: NextRequest) {
         // Case 2: Process payment_confirmed orders
         else if (order.status === "payment_confirmed" && process.env.SMMGEN_API_KEY) {
           try {
-            const serviceId = getSMMGenServiceId(order.platform, order.service_type)
+            // Get SMMGen service ID from package (preferred) or fallback to platform/service type mapping
+            let serviceId: number | null = null
+            
+            // Try to get service ID from package_id first
+            if (order.package_id) {
+              serviceId = getSMMGenServiceIdFromPackage(
+                order.platform,
+                order.service_type,
+                order.package_id
+              )
+            }
+            
+            // Fallback to platform/service type mapping
+            if (serviceId === null || serviceId === 0) {
+              serviceId = getSMMGenServiceId(order.platform, order.service_type)
+            }
             
             if (serviceId === null || serviceId === 0) {
               results.failed++

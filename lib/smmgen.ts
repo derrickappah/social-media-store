@@ -36,6 +36,10 @@ interface SMMGenResponse {
 /**
  * Map our service types and platforms to SMMGen numeric service IDs
  * 
+ * DEPRECATED: This function is kept for backward compatibility.
+ * For new orders, use getSMMGenServiceIdFromPackage() from lib/pricing.ts
+ * which allows different packages to have different SMMGen service IDs.
+ * 
  * IMPORTANT: You MUST update these with your actual SMMGen service IDs!
  * Get your service IDs by calling the services() API endpoint
  * 

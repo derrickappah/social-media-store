@@ -178,6 +178,7 @@ export function OrderForm() {
         platform: socialMedia,
         service_type: serviceType.charAt(0).toUpperCase() + serviceType.slice(1),
         package_name: pkg?.label || "",
+        package_id: selectedPackage, // Store package ID for SMMGen service ID mapping
         package_price: pkg?.price || 0,
         quantity: quantity, // Store quantity directly
         social_media_link: socialLink,
