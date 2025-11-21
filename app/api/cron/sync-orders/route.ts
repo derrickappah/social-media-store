@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { getSMMGenOrderStatus, processSMMGenOrder } from "@/lib/smmgen"
-import { getSMMGenServiceIdFromPackage, getSMMGenServiceId } from "@/lib/pricing"
+import { getSMMGenOrderStatus, processSMMGenOrder, getSMMGenServiceId } from "@/lib/smmgen"
+import { getSMMGenServiceIdFromPackage } from "@/lib/pricing"
 
 /**
  * Cron job endpoint to automatically sync order statuses

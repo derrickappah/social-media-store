@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { processSMMGenOrder } from "@/lib/smmgen"
-import { getSMMGenServiceIdFromPackage, getSMMGenServiceId } from "@/lib/pricing"
+import { processSMMGenOrder, getSMMGenServiceId } from "@/lib/smmgen"
+import { getSMMGenServiceIdFromPackage } from "@/lib/pricing"
 
 export async function POST(request: NextRequest) {
   try {
