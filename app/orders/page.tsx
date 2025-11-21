@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Header } from "@/components/header"
 import { Footer } from "@/components/footer"
@@ -23,6 +23,10 @@ interface Order {
   full_name: string
   email: string
   phone: string
+  user_id?: string | null
+  quantity?: number | null
+  smmgen_order_id?: string | null
+  processed_at?: string | null
 }
 
 const statusConfig = {
@@ -57,97 +61,126 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [user, setUser] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const supabase = createClient()
+  
+  // Create a stable supabase client reference
+  const supabase = useMemo(() => createClient(), [])
 
   useEffect(() => {
     const fetchUserAndOrders = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-
-      if (!session?.user) {
-        router.push("/")
-        return
-      }
-
-      setUser(session.user)
-
-      // Try to fetch orders by user_id first (if column exists)
-      let ordersData: any[] = []
-      let useEmailFallback = false
-
       try {
-        const { data, error } = await supabase
-          .from("orders")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .order("created_at", { ascending: false })
+        setLoading(true)
+        setError(null)
 
-        if (error) {
-          // Check if error is due to missing column
-          const errorMessage = error.message || ""
-          const isColumnError = 
-            errorMessage.includes("user_id") || 
-            errorMessage.includes("column") ||
-            errorMessage.includes("schema cache") ||
-            error.code === "PGRST116" // Column not found
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession()
 
-          if (isColumnError) {
-            console.warn("user_id column not found, falling back to email lookup:", error.message)
-            useEmailFallback = true
-          } else {
-            console.error("Error fetching orders by user_id:", {
-              error,
-              message: error.message,
-              details: error.details,
-              hint: error.hint,
-              code: error.code,
-            })
-            useEmailFallback = true
-          }
-        } else {
-          ordersData = data || []
-          // If no orders found by user_id, try email as fallback
-          if (ordersData.length === 0) {
-            useEmailFallback = true
-          }
+        if (sessionError) {
+          console.error("Error getting session:", sessionError)
+          setError("Failed to authenticate. Please try logging in again.")
+          setLoading(false)
+          return
         }
-      } catch (err) {
-        console.error("Exception fetching orders by user_id:", err)
-        useEmailFallback = true
-      }
 
-      // Fallback: try fetching by email if user_id query failed or returned no results
-      if (useEmailFallback) {
+        if (!session?.user) {
+          router.push("/")
+          return
+        }
+
+        setUser(session.user)
+
+        // Try to fetch orders by user_id first (if column exists)
+        let ordersData: Order[] = []
+        let useEmailFallback = false
+
         try {
-          const { data: ordersByEmail, error: emailError } = await supabase
+          const { data, error: queryError } = await supabase
             .from("orders")
             .select("*")
-            .eq("email", session.user.email || "")
+            .eq("user_id", session.user.id)
             .order("created_at", { ascending: false })
 
-          if (emailError) {
-            console.error("Error fetching orders by email:", {
-              error: emailError,
-              message: emailError.message,
-              details: emailError.details,
-              hint: emailError.hint,
-              code: emailError.code,
-            })
-            setOrders([])
+          if (queryError) {
+            // Check if error is due to missing column or RLS policy
+            const errorMessage = queryError.message || ""
+            const isColumnError = 
+              errorMessage.includes("user_id") || 
+              errorMessage.includes("column") ||
+              errorMessage.includes("schema cache") ||
+              queryError.code === "PGRST116" // Column not found
+
+            if (isColumnError) {
+              console.warn("user_id column not found, falling back to email lookup:", queryError.message)
+              useEmailFallback = true
+            } else {
+              console.error("Error fetching orders by user_id:", {
+                error: queryError,
+                message: queryError.message,
+                details: queryError.details,
+                hint: queryError.hint,
+                code: queryError.code,
+              })
+              // Try email fallback for RLS or other errors
+              useEmailFallback = true
+            }
           } else {
-            setOrders(ordersByEmail || [])
+            ordersData = (data || []) as Order[]
+            // If no orders found by user_id, try email as fallback
+            if (ordersData.length === 0 && session.user.email) {
+              useEmailFallback = true
+            }
           }
         } catch (err) {
-          console.error("Exception fetching orders by email:", err)
-          setOrders([])
+          console.error("Exception fetching orders by user_id:", err)
+          useEmailFallback = true
         }
-      } else {
-        setOrders(ordersData)
-      }
 
-      setLoading(false)
+        // Fallback: try fetching by email if user_id query failed or returned no results
+        if (useEmailFallback && session.user.email) {
+          try {
+            const { data: ordersByEmail, error: emailError } = await supabase
+              .from("orders")
+              .select("*")
+              .eq("email", session.user.email)
+              .order("created_at", { ascending: false })
+
+            if (emailError) {
+              console.error("Error fetching orders by email:", {
+                error: emailError,
+                message: emailError.message,
+                details: emailError.details,
+                hint: emailError.hint,
+                code: emailError.code,
+              })
+              
+              // Check if it's an RLS policy issue
+              if (emailError.code === "42501" || emailError.message?.includes("policy")) {
+                setError("Permission denied. Please check your account permissions.")
+              } else {
+                setError("Failed to load orders. Please try again later.")
+              }
+              setOrders([])
+            } else {
+              setOrders((ordersByEmail || []) as Order[])
+            }
+          } catch (err) {
+            console.error("Exception fetching orders by email:", err)
+            setError("An unexpected error occurred while loading orders.")
+            setOrders([])
+          }
+        } else {
+          setOrders(ordersData)
+        }
+      } catch (err) {
+        console.error("Unexpected error in fetchUserAndOrders:", err)
+        setError("An unexpected error occurred. Please try again.")
+        setOrders([])
+      } finally {
+        setLoading(false)
+      }
     }
 
     fetchUserAndOrders()
@@ -183,7 +216,21 @@ export default function OrdersPage() {
             </p>
           </div>
 
-          {orders.length === 0 ? (
+          {error ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <AlertCircle className="h-12 w-12 text-destructive mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Error Loading Orders</h3>
+                <p className="text-muted-foreground text-center mb-6">{error}</p>
+                <div className="flex gap-2">
+                  <Button onClick={() => window.location.reload()}>Retry</Button>
+                  <Button asChild variant="outline">
+                    <Link href="/#order">Place an Order</Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : orders.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <Package className="h-12 w-12 text-muted-foreground mb-4" />
@@ -243,15 +290,29 @@ export default function OrdersPage() {
                               href={order.social_media_link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-primary hover:underline truncate"
+                              className="text-primary hover:underline truncate max-w-[200px]"
                             >
                               {order.social_media_link}
                             </a>
                           </div>
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="font-medium">Contact:</span>
-                            <span>{order.phone}</span>
-                          </div>
+                          {order.quantity && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-medium">Quantity:</span>
+                              <span>{order.quantity.toLocaleString()}</span>
+                            </div>
+                          )}
+                          {order.smmgen_order_id && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-medium">SMMGen ID:</span>
+                              <span className="font-mono text-xs">{order.smmgen_order_id}</span>
+                            </div>
+                          )}
+                          {order.processed_at && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="font-medium">Processed:</span>
+                              <span>{new Date(order.processed_at).toLocaleString()}</span>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>
