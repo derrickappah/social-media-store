@@ -7,13 +7,8 @@ import { getSMMGenServiceIdFromPackage } from "@/lib/pricing"
  * Cron job endpoint to automatically sync order statuses
  * Configure in Vercel: https://vercel.com/docs/cron-jobs
  * 
- * Example vercel.json:
- * {
- *   "crons": [{
- *     "path": "/api/cron/sync-orders",
- *     "schedule": "*/5 * * * *"
- *   }]
- * }
+ * Ensure vercel.json contains the cron configuration.
+ * See: https://vercel.com/docs/cron-jobs
  */
 export async function GET(request: NextRequest) {
   // Verify cron secret (optional but recommended)
